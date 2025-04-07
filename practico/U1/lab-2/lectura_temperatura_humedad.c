@@ -149,6 +149,3 @@ int main()
     printf("Programa terminado correctamente\n");
     return 0;
 }
-
-
- 
