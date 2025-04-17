@@ -49,9 +49,6 @@ static unsigned int lastDebounceTime = 0;
 // ==== Inicialización de GPIO ====
 void gpio_setup()
 {
-    gpioSetMode(BUTTON_PIN, PI_INPUT);
-    gpioSetPullUpDown(BUTTON_PIN, PI_PUD_UP); // Botón activo bajo
-    gpioSetMode(LED_PIN, PI_OUTPUT);
     gpioWrite(LED_PIN, 0);
 }
 
@@ -189,4 +186,11 @@ int main()
 
     gpioTerminate();
     return 0;
+}
+
+while (1)
+{
+    task_button_state();
+    task_led_control();
+    wait_10ms();
 }
