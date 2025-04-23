@@ -1,112 +1,186 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <stdbool.h>
+#include <pigpio.h>
 #include <unistd.h>
-#include <errno.h>
-#include <limits.h>
 #include <signal.h>
-#include <pigpio.h>  // Librería pigpio
+#include <time.h>
 
-#define NUM_TASKS 3
-#define GPIO_TASK1 17  // LED para Tarea 1 (GPIO17)
-#define GPIO_TASK2 27  // LED para Tarea 2 (GPIO27)
-#define GPIO_TASK3 22  // LED para Tarea 3 (GPIO22)
+// ==== Configuración de pines para los LEDs ====
+#define LED1_PIN 17
+#define LED2_PIN 27
+#define LED3_PIN 22
 
-struct Task {
-    int id;
-    unsigned long period_ms;
-    struct timespec next_run;
-    int gpio_pin;
-    bool led_state;  // Estado del LED (ON/OFF)
-};
+// ==== Temporizaciones de las tareas (en ms) ====
+#define TASK1_PERIOD_MS 100
+#define TASK2_PERIOD_MS 300
+#define TASK3_PERIOD_MS 500
 
-// Funciones para manejo de tiempo (igual que antes)
-void timespec_add_ms(struct timespec *t, unsigned long ms);
-bool timespec_ge(const struct timespec *a, const struct timespec *b);
-void timespec_sub(struct timespec *result, const struct timespec *a, const struct timespec *b);
+// ==== Periodo del ejecutivo cíclico (en µs) ====
+#define EXECUTIVE_PERIOD_US 10000 // 10 ms
 
-// Función para manejar señal de interrupción (Ctrl+C)
-volatile sig_atomic_t stop = 0;
-void handle_signal(int sig) {
-    gpioTerminate();  // Limpiar GPIO
-    exit(0);
+// ==== Macros para logs ====
+#define DEBUG 1
+#if DEBUG
+#define LOG(msg, ...) printf(msg, ##__VA_ARGS__)
+#else
+#define LOG(msg, ...)
+#endif
+
+// ==== Variables de estado ====
+static unsigned int task1_last_run = 0;
+static unsigned int task2_last_run = 0;
+static unsigned int task3_last_run = 0;
+
+// ==== Bandera de control para salida segura ====
+volatile sig_atomic_t running = 1;
+
+// ==== Manejador de señales para limpieza ====
+void handle_sigint(int sig)
+{
+    // IMPORTANTE: Aquí no llamamos a funciones de pigpio
+    // Solo marcamos la bandera de salida
+    running = 0;
 }
 
-int main() {
-    // Inicializar pigpio
-    if (gpioInitialise() < 0) {
+// ==== Inicialización de GPIO ====
+void gpio_setup()
+{
+    // Configurar pines como salidas
+    gpioSetMode(LED1_PIN, PI_OUTPUT);
+    gpioSetMode(LED2_PIN, PI_OUTPUT);
+    gpioSetMode(LED3_PIN, PI_OUTPUT);
+    
+    // Asegurar que todos los LEDs estén apagados al inicio
+    gpioWrite(LED1_PIN, 0);
+    gpioWrite(LED2_PIN, 0);
+    gpioWrite(LED3_PIN, 0);
+}
+
+// ==== Tarea 1: Ejecución cada 100 ms ====
+void task1(unsigned int current_time_ms)
+{
+    static int led_state = 0;
+
+    led_state = !led_state;
+    gpioWrite(LED1_PIN, led_state);
+    LOG("Tarea 1 ejecutada - Tiempo: %d ms - LED %s\n", current_time_ms, led_state ? "ENCENDIDO" : "APAGADO");
+}
+
+// ==== Tarea 2: Ejecución cada 300 ms ====
+void task2(unsigned int current_time_ms)
+{
+    static int led_state = 0;
+
+    led_state = !led_state;
+    gpioWrite(LED2_PIN, led_state);
+    LOG("Tarea 2 ejecutada - Tiempo: %d ms - LED %s\n", current_time_ms, led_state ? "ENCENDIDO" : "APAGADO");
+}
+
+// ==== Tarea 3: Ejecución cada 500 ms ====
+void task3(unsigned int current_time_ms)
+{
+    static int led_state = 0;
+
+    led_state = !led_state;
+    gpioWrite(LED3_PIN, led_state);
+    LOG("Tarea 3 ejecutada - Tiempo: %d ms - LED %s\n", current_time_ms, led_state ? "ENCENDIDO" : "APAGADO");
+}
+
+// ==== Función principal ====
+int main()
+{
+    // Registrar señal Ctrl+C
+    // Solo establecemos la bandera - las operaciones GPIO ocurrirán en el bucle principal
+    signal(SIGINT, handle_sigint);
+
+    // Inicializar la biblioteca pigpio
+    if (gpioInitialise() < 0)
+    {
         fprintf(stderr, "Error al inicializar pigpio\n");
         return 1;
     }
 
-    // Configurar manejo de señales
-    signal(SIGINT, handle_signal);
+    // Configurar pines GPIO
+    gpio_setup();
 
-    // Configurar pines GPIO como salidas
-    struct Task tasks[NUM_TASKS] = {
-        {1, 100, {0}, GPIO_TASK1, false},
-        {2, 300, {0}, GPIO_TASK2, false},
-        {3, 500, {0}, GPIO_TASK3, false}
-    };
+    // Inicializar temporizador
+    unsigned int next_tick = gpioTick();
+    unsigned int start_time = gpioTick() / 1000; // Tiempo inicial en ms
 
-    for (int i = 0; i < NUM_TASKS; i++) {
-        gpioSetMode(tasks[i].gpio_pin, PI_OUTPUT);  // Modo salida
-        gpioWrite(tasks[i].gpio_pin, PI_OFF);       // Iniciar apagado
-    }
+    LOG("Programa iniciado. Presiona Ctrl+C para salir.\n");
 
-    struct timespec start_time;
-    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    // ==== SOLUCIÓN CLAVE: Capturar estado actual de los LEDs ====
+    int led1_state = 0;
+    int led2_state = 0;
+    int led3_state = 0;
 
-    // Inicializar next_run
-    for (int i = 0; i < NUM_TASKS; i++) {
-        tasks[i].next_run = start_time;
-        timespec_add_ms(&tasks[i].next_run, tasks[i].period_ms);
-    }
+    while (running)
+    {
+        unsigned int current_time_us = gpioTick();
+        unsigned int current_time_ms = current_time_us / 1000 - start_time;
 
-    while (!stop) {
-        struct timespec now;
-        clock_gettime(CLOCK_MONOTONIC, &now);
-
-        // Encontrar el próximo tiempo de ejecución
-        struct timespec earliest = {.tv_sec = LONG_MAX, .tv_nsec = 0};
-        for (int i = 0; i < NUM_TASKS; i++) {
-            if (timespec_ge(&earliest, &tasks[i].next_run)) {
-                earliest = tasks[i].next_run;
-            }
+        // Ejecutar tareas según sus periodos
+        if (current_time_ms - task1_last_run >= TASK1_PERIOD_MS)
+        {
+            task1(current_time_ms);
+            task1_last_run = current_time_ms;
+            // IMPORTANTE: Capturar el estado actual del LED
+            led1_state = gpioRead(LED1_PIN);
         }
 
-        // Esperar hasta el próximo evento
-        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &earliest, NULL);
+        if (current_time_ms - task2_last_run >= TASK2_PERIOD_MS)
+        {
+            task2(current_time_ms);
+            task2_last_run = current_time_ms;
+            // IMPORTANTE: Capturar el estado actual del LED
+            led2_state = gpioRead(LED2_PIN);
+        }
 
-        // Ejecutar tareas pendientes
-        clock_gettime(CLOCK_MONOTONIC, &now);
-        for (int i = 0; i < NUM_TASKS; i++) {
-            if (timespec_ge(&now, &tasks[i].next_run)) {
-                // Toggle LED
-                tasks[i].led_state = !tasks[i].led_state;
-                gpioWrite(tasks[i].gpio_pin, tasks[i].led_state ? PI_ON : PI_OFF);
+        if (current_time_ms - task3_last_run >= TASK3_PERIOD_MS)
+        {
+            task3(current_time_ms);
+            task3_last_run = current_time_ms;
+            // IMPORTANTE: Capturar el estado actual del LED
+            led3_state = gpioRead(LED3_PIN);
+        }
 
-                // Calcular tiempo transcurrido
-                struct timespec elapsed_ts;
-                timespec_sub(&elapsed_ts, &now, &start_time);
-                unsigned long elapsed_ms = elapsed_ts.tv_sec * 1000 + elapsed_ts.tv_nsec / 1000000;
+        // Control del período del ejecutivo cíclico
+        next_tick += EXECUTIVE_PERIOD_US;
+        int delay = next_tick - gpioTick();
 
-                printf("Tarea %d (GPIO %d): %s - %lu ms\n", 
-                       tasks[i].id, tasks[i].gpio_pin, 
-                       tasks[i].led_state ? "ON" : "OFF", elapsed_ms);
-
-                // Programar próxima ejecución
-                timespec_add_ms(&tasks[i].next_run, tasks[i].period_ms);
-            }
+        if (delay > 0)
+        {
+            gpioDelay(delay);
+        }
+        else
+        {
+            LOG("ADVERTENCIA: Período excedido en %d us\n", -delay);
+            next_tick = gpioTick();
         }
     }
 
-    gpioTerminate();  // Limpiar GPIO al salir
+    // SOLUCIÓN CLAVE: Apagar todos los LEDs explícitamente al salir del bucle
+    LOG("Apagando todos los LEDs...\n");
+    
+    // Garantizar que todos los LEDs estén apagados, independientemente de su estado actual
+    gpioWrite(LED1_PIN, 0);
+    gpioWrite(LED2_PIN, 0);
+    gpioWrite(LED3_PIN, 0);
+    
+    // Pequeña pausa para asegurar que los cambios de GPIO se completen
+    usleep(50000); // 50ms
+    
+    // Imprimir informe del estado de los LEDs antes de terminar
+    LOG("Estado de los LEDs antes de finalizar:\n");
+    LOG("LED1: %s -> APAGADO\n", led1_state ? "ENCENDIDO" : "APAGADO");
+    LOG("LED2: %s -> APAGADO\n", led2_state ? "ENCENDIDO" : "APAGADO");
+    LOG("LED3: %s -> APAGADO\n", led3_state ? "ENCENDIDO" : "APAGADO");
+    
+    // Terminar la biblioteca pigpio
+    gpioTerminate();
+    
+    LOG("Programa finalizado correctamente\n");
+    fflush(stdout);
+
     return 0;
 }
-
-// Implementación de funciones de tiempo (copiar del código anterior)
-void timespec_add_ms(struct timespec *t, unsigned long ms) { /* ... */ }
-bool timespec_ge(const struct timespec *a, const struct timespec *b) { /* ... */ }
-void timespec_sub(struct timespec *result, const struct timespec *a, const struct timespec *b) { /* ... */ }
