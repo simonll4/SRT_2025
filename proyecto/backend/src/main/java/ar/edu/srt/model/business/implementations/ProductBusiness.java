@@ -55,13 +55,6 @@ public class ProductBusiness implements IProductBusiness {
     @Override
     public Product add(Product product) throws FoundException, BusinessException {
 
-//        try {
-//            load(product.getId());
-//            throw FoundException.builder().message("Ya existe el Producto id= " + product.getId()).build();
-//        } catch (NotFoundException e) {
-//            // log.trace(e.getMessage(), e);
-//        }
-
         try {
             load(product.getProduct());
             throw FoundException.builder().message("Ya existe el Producto " + product.getProduct()).build();
@@ -73,7 +66,6 @@ public class ProductBusiness implements IProductBusiness {
             return productDAO.save(product);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            //throw BusinessException.builder().ex(e).build();
             throw BusinessException.builder().message("Error al Crear Nuevo Producto").build();
         }
 

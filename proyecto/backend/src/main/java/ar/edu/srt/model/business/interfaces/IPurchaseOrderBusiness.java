@@ -16,10 +16,7 @@ public interface IPurchaseOrderBusiness {
 
     List<PurchaseOrder> list() throws BusinessException;
 
-
-    @Transactional
     PurchaseOrder completeOrder(PurchaseOrder order) throws NotFoundException, BusinessException, FoundException;
 
-    @Transactional
     PurchaseOrder cancelOrder(PurchaseOrder order) throws NotFoundException, BusinessException;
 }

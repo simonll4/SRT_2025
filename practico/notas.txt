@@ -1,6 +1,2 @@
 - PID (proportional integral derivative)
 
-
-
-PINES RASPBERERY
-- GND = negativo 

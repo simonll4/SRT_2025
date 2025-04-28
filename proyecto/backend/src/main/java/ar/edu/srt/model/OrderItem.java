@@ -1,7 +1,5 @@
-package ar.edu.srt.model.business;
+package ar.edu.srt.model;
 
-import ar.edu.srt.model.Product;
-import ar.edu.srt.model.PurchaseOrder;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

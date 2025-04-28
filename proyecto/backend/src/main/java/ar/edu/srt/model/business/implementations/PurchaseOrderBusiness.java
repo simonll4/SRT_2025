@@ -3,7 +3,7 @@ package ar.edu.srt.model.business.implementations;
 import ar.edu.srt.model.PurchaseOrder;
 import ar.edu.srt.model.Product;
 import ar.edu.srt.model.User;
-import ar.edu.srt.model.business.OrderItem;
+import ar.edu.srt.model.OrderItem;
 import ar.edu.srt.model.business.exceptions.BusinessException;
 import ar.edu.srt.model.business.exceptions.FoundException;
 import ar.edu.srt.model.business.exceptions.NotFoundException;
@@ -67,7 +67,7 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
 
     @Override
     @Transactional
-    public PurchaseOrder add(PurchaseOrder purchaseOrder) throws FoundException, BusinessException, NotFoundException {
+    public PurchaseOrder add(PurchaseOrder purchaseOrder) throws BusinessException, NotFoundException {
         // 1. Validar usuario
         User user = purchaseOrder.getUser();
         if (user == null || user.getExternalId() == null) {
@@ -112,7 +112,6 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
             item.setProduct(managedProduct);
             item.setUnitPrice(managedProduct.getPrice()); // Guardar precio actual
             item.setOrder(purchaseOrder); // Establecer relación bidireccional
-
             managedItems.add(item);
 
             // Calcular subtotal
@@ -130,8 +129,7 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
         // 6. Validar saldo
         if (total.compareTo(managedUser.getBalance()) > 0) {
             purchaseOrder.setStatus(PurchaseOrder.OrderStatus.FAILED);
-            purchaseOrder.setDescription("Saldo insuficiente. Saldo actual: " +
-                    managedUser.getBalance() + ", Total requerido: " + total);
+            purchaseOrder.setDescription("Saldo insuficiente para completar la orden");
         }
 
         // 7. Guardar la orden
@@ -145,79 +143,6 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
         }
     }
 
-
-//    @Override
-//    @Transactional
-//    public PurchaseOrder add(PurchaseOrder purchaseOrder) throws FoundException, BusinessException, NotFoundException {
-//        // Verificar si la orden ya existe
-
-    /// /        if (purchaseOrder.getId() != null) {
-    /// /            Optional<PurchaseOrder> existingOrder = purchaseOrderDAO.findById(purchaseOrder.getId());
-    /// /            if (existingOrder.isPresent()) {
-    /// /                throw FoundException.builder().message("Ya existe la Orden id= " + purchaseOrder.getId()).build();
-    /// /            }
-    /// /        }
-//
-//        // Verificar si existe externalId del user
-//        User user = purchaseOrder.getUser();
-//        if (user == null || user.getExternalId() == null) {
-//            throw BusinessException.builder().message("La orden debe tener un usuario con externalId asociado").build();
-//        }
-//
-//        // verificar si el usuario existe
-//        Optional<User> userFound = userDAO.findByExternalId(user.getExternalId());
-//        if (userFound.isEmpty()) {
-//            throw NotFoundException.builder().message("No se encuentra el Usuario externalId= " + user.getExternalId()).build();
-//        }
-//
-//        // Verificar productos
-//        Set<Product> products = purchaseOrder.getProducts();
-//        if (products == null || products.isEmpty()) {
-//            throw BusinessException.builder().message("La orden debe contener al menos un producto").build();
-//        }
-//
-//        Set<Product> managedProducts = products.stream()
-//                .map(product -> {
-//                    try {
-//                        return productDAO.findById(product.getId())
-//                                .orElseThrow(() -> NotFoundException.builder()
-//                                        .message("No se encuentra el Producto id= " + product.getId())
-//                                        .build());
-//                    } catch (NotFoundException e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                })
-//                .collect(Collectors.toSet());
-//
-//        // Calcular total (opcional)
-//        BigDecimal total = managedProducts.stream()
-//                .map(Product::getPrice)
-//                .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//        // Crear nueva orden
-//        PurchaseOrder newOrder = new PurchaseOrder();
-//        newOrder.setUser(userFound.get());
-//        newOrder.setProducts(managedProducts);
-//        newOrder.setTotal(total);
-//
-//        // Validar balance del usuario
-//        User userEntity = userFound.get();
-//        if (total.compareTo(userEntity.getBalance()) > 0) {
-//            newOrder.setStatus(PurchaseOrder.OrderStatus.FAILED);
-//            newOrder.setDescription("Saldo insuficiente para completar la orden. Saldo actual: "
-//                    + userEntity.getBalance() + ", Total requerido: " + total);
-//        } else {
-//            newOrder.setStatus(PurchaseOrder.OrderStatus.PENDING);
-//        }
-//
-//        try {
-//            return purchaseOrderDAO.save(newOrder);
-//        } catch (Exception e) {
-//            log.error(e.getMessage(), e);
-//            throw BusinessException.builder().message("Error al crear la Orden").build();
-//        }
-//    }
-    @Transactional
     @Override
     public PurchaseOrder completeOrder(PurchaseOrder order) throws NotFoundException, BusinessException, FoundException {
         PurchaseOrder orderFound = load(order.getId());
@@ -233,8 +158,7 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
         BigDecimal total = orderFound.getTotal();
         if (total.compareTo(user.getBalance()) > 0) {
             orderFound.setStatus(PurchaseOrder.OrderStatus.FAILED);
-            orderFound.setDescription("Saldo insuficiente para completar la orden. Saldo actual: "
-                    + user.getBalance() + ", Total requerido: " + total);
+            orderFound.setDescription("Saldo insuficiente para completar la orden");
         } else {
             user.setBalance(user.getBalance().subtract(total));
             userBusiness.update(user);
@@ -253,7 +177,6 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
         }
     }
 
-    @Transactional
     @Override
     public PurchaseOrder cancelOrder(PurchaseOrder order) throws NotFoundException, BusinessException {
         PurchaseOrder orderFound = load(order.getId());
