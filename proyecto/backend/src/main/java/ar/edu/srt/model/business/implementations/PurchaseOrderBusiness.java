@@ -204,4 +204,80 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
         }
     }
 
+    @Override
+    public PurchaseOrder updateOrderItems(List<OrderItem> itemsToUpdate)
+            throws NotFoundException, BusinessException {
+
+        // 1. Cargar la orden completa
+        Long orderId = itemsToUpdate.get(0).getId();
+        PurchaseOrder order = load(orderId);
+
+        // 2. Validar que esté en estado PENDING
+        if (order.getStatus() != PurchaseOrder.OrderStatus.PENDING) {
+            throw BusinessException.builder()
+                    .message("Solo se pueden modificar órdenes en estado PENDING")
+                    .build();
+        }
+
+        // 3. Procesar cada item a actualizar
+        for (OrderItem updateItem : itemsToUpdate) {
+            // Validar que el item pertenezca a esta orden
+            if (!orderId.equals(updateItem.getOrder().getId())) {
+                throw BusinessException.builder()
+                        .message("El item no pertenece a esta orden")
+                        .build();
+            }
+
+            // Buscar el item existente
+            OrderItem existingItem = order.getItems().stream()
+                    .filter(item -> item.getId().equals(updateItem.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> NotFoundException.builder()
+                            .message("No se encuentra el item con id " + updateItem.getId())
+                            .build());
+
+            // Validar que el producto no haya cambiado
+            if (!existingItem.getProduct().getId().equals(updateItem.getProduct().getId())) {
+                throw BusinessException.builder()
+                        .message("No se puede cambiar el producto de un item existente")
+                        .build();
+            }
+
+            // Validar cantidad
+            if (updateItem.getQuantity() <= 0) {
+                // Eliminar el item si la cantidad es cero o negativa
+                order.getItems().remove(existingItem);
+            } else {
+                // Actualizar cantidad
+                existingItem.setQuantity(updateItem.getQuantity());
+            }
+        }
+
+        // 4. Recalcular el total
+        BigDecimal newTotal = calculateOrderTotal(order);
+        order.setTotal(newTotal);
+
+        // 5. Si no quedan items, marcar como FAILED
+        if (order.getItems().isEmpty()) {
+            order.setStatus(PurchaseOrder.OrderStatus.FAILED);
+            order.setDescription("Orden vaciada - Sin productos");
+        }
+
+        // 6. Guardar cambios
+        try {
+            return purchaseOrderDAO.save(order);
+        } catch (Exception e) {
+            log.error("Error al actualizar items de la orden", e);
+            throw BusinessException.builder()
+                    .message("Error al actualizar items de la orden")
+                    .build();
+        }
+    }
+
+    private BigDecimal calculateOrderTotal(PurchaseOrder order) {
+        return order.getItems().stream()
+                .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
 }

@@ -38,15 +38,6 @@ public class PurchaseOrder {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // Relación mediante tabla de unión con Product
-//    @ManyToMany(fetch = FetchType.LAZY)
-//    @JoinTable(
-//            name = "order_products",
-//            joinColumns = @JoinColumn(name = "order_id"),
-//            inverseJoinColumns = @JoinColumn(name = "product_id")
-//    )
-//    private List<Product> products = new ArrayList<>();
-
     // Cambiar a relación uno-a-muchos con OrderItem
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();

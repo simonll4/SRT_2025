@@ -1,5 +1,6 @@
 package ar.edu.srt.model.business.interfaces;
 
+import ar.edu.srt.model.OrderItem;
 import ar.edu.srt.model.PurchaseOrder;
 import ar.edu.srt.model.business.exceptions.BusinessException;
 import ar.edu.srt.model.business.exceptions.FoundException;
@@ -19,4 +20,9 @@ public interface IPurchaseOrderBusiness {
     PurchaseOrder completeOrder(PurchaseOrder order) throws NotFoundException, BusinessException, FoundException;
 
     PurchaseOrder cancelOrder(PurchaseOrder order) throws NotFoundException, BusinessException;
+
+
+    @Transactional
+    PurchaseOrder updateOrderItems( List<OrderItem> itemsToUpdate)
+            throws NotFoundException, BusinessException;
 }

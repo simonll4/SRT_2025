@@ -55,6 +55,7 @@ public class PurchaseOrderSlimV1JsonSerializer extends StdSerializer<PurchaseOrd
             for (OrderItem item : order.getItems()) {
                 if (item.getProduct() != null) {
                     jsonGenerator.writeStartObject();
+                    jsonGenerator.writeNumberField("id", item.getId());
                     jsonGenerator.writeNumberField("productId", item.getProduct().getId());
                     jsonGenerator.writeStringField("productName", item.getProduct().getProduct());
                     jsonGenerator.writeNumberField("quantity", item.getQuantity());

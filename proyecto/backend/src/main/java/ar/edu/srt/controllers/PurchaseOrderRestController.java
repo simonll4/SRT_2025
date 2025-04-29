@@ -1,6 +1,7 @@
 package ar.edu.srt.controllers;
 
 import ar.edu.srt.Constants;
+import ar.edu.srt.model.OrderItem;
 import ar.edu.srt.model.PurchaseOrder;
 import ar.edu.srt.model.business.interfaces.IPurchaseOrderBusiness;
 import ar.edu.srt.model.serializers.PurchaseOrderSlimV1JsonSerializer;
@@ -79,5 +80,19 @@ public class PurchaseOrderRestController {
         responseHeaders.set("location", Constants.URL_PRODUCTS + "/" + response.getId());
         return new ResponseEntity<>(responseHeaders, HttpStatus.OK);
     }
+
+    // TODO eliminar productos de una orden en estado pendiente
+    // actualizar el total de la orden
+    @SneakyThrows
+    @PatchMapping(value = "/items")
+    public ResponseEntity<?> updateOrderItems(
+            @RequestBody List<OrderItem> itemsToUpdate) {
+        PurchaseOrder updatedOrder = purchaseOrderBusiness.updateOrderItems( itemsToUpdate);
+        StdSerializer<PurchaseOrder> serializer = new PurchaseOrderSlimV1JsonSerializer(PurchaseOrder.class, false);
+        ObjectMapper mapper = JsonUtils.getObjectMapper(PurchaseOrder.class, serializer, null);
+        Object serializedOrder = mapper.valueToTree(updatedOrder);
+        return new ResponseEntity<>(serializedOrder, HttpStatus.OK);
+    }
+
 }
 
