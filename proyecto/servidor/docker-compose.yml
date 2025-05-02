@@ -1,0 +1,49 @@
+services:
+  backend:
+    image: simonll4/srt-backend
+    container_name: backend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - 80:8080
+    environment:
+      - SPRING_PROFILES_ACTIVE=mysqldev
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=iw3
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+      - MYSQL_DATABASE=iw3
+      - MYSQL_ROOT_PASSWORD=123
+    command: --bind-address=0.0.0.0
+    expose:
+      - 3306
+    volumes:
+      - mysql-data-iw3:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    restart: always
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+    ports:
+      - 8080:8080
+
+volumes:
+  mysql-data-iw3:
