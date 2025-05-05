@@ -5,4 +5,4 @@ class User:
     username: str
     surname: str
     balance: float
-    card_id: str
+    external_id: str

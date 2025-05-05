@@ -136,7 +136,7 @@ class IdentificationScreen(tk.Frame):
             "nombre": user.username,
             "apellido": user.surname,
             "saldo": user.balance,
-            "id_tarjeta": user.card_id,
+            "external_id": user.external_id,
         }
 
         # 4. Transición después de 1.5 segundos
@@ -167,7 +167,7 @@ class IdentificationScreen(tk.Frame):
             )
 
             # Reiniciar estado de escaneo
-            self._current_card_id = None
+            self._current_external_id = None
             self._card_processing = False
 
             # Forzar actualización

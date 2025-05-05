@@ -5,6 +5,9 @@ from gui.screens.screen_product_scan import ProductScanScreen
 from gui.screens.screen_confirmation import ConfirmationScreen
 from gui.api.services.auth_service import AuthService  # Importamos el servicio
 
+# TODO: # def run_feedback(success):
+#     command = ["sudo", "./rfid_feedback", "success" if success else "error"]
+#     subprocess.run(command)
 
 class App(tk.Tk):
     def __init__(self):
@@ -30,30 +33,12 @@ class App(tk.Tk):
         self.current_screen = screen_class(self, **kwargs)
         self.current_screen.pack(fill="both", expand=True)
 
-    # --- Flujo de navegación ---
-    # def show_identification_screen(self):
-    #     """Pantalla de identificación con RFID"""
-    #     def on_success(user_data):
-    #         print(f"[AUTH] Usuario autenticado: {user_data['nombre']}")
-    #         self.user_data = user_data
-    #         self.show_welcome_screen()
-
-    #     def on_failure():
-    #         print("[AUTH] Tarjeta no reconocida")
-    #         # Vuelve a intentar automáticamente después de 3 segundos
-    #         self.after(3000, self.show_identification_screen)
-
-    #     self.show_screen(
-    #         IdentificationScreen,
-    #         auth_service=self.auth_service,  # Pasamos el servicio configurado
-    #         on_success=on_success,
-    #         on_failure=on_failure
-    #     )
     def show_identification_screen(self):
         """Pantalla de identificación con RFID"""
 
         def on_success(user_data):
             print(f"[AUTH] Usuario autenticado: {user_data['nombre']}")
+            print(user_data)
             self.user_data = user_data
             print(f"[AUTH] Datos del usuario (desde main.py): {self.user_data}")
             self.show_welcome_screen()
@@ -91,6 +76,8 @@ class App(tk.Tk):
             user_data=self.user_data,
             on_success=self.show_confirmation_screen,
             on_cancel=self.show_welcome_screen,
+            on_failure=self.show_identification_screen,
+            on_logout=self.logout_user,
         )
 
     def show_confirmation_screen(self, total_amount):

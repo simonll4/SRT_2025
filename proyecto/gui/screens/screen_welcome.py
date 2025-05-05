@@ -13,7 +13,7 @@ class WelcomeScreen(tk.Frame):
         saldo = self.user_data.get("saldo", 0.0)
 
         tk.Label(self, text=f"Bienvenido {nombre}", font=("Arial", 18)).pack(pady=10)
-        tk.Label(self, text=f"Tu saldo es ${saldo:.2f}", font=("Arial", 14)).pack(pady=5)
+        tk.Label(self, text=f"Tu saldo es ${saldo:.2f}", font=("Arial", 14)).pack(pady=10)
 
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=20)

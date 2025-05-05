@@ -1,14 +1,19 @@
 import tkinter as tk
 from tkinter import messagebox
-from gui.screens.screen_identification import IdentificationScreen
+
+# TODO: Mostrar el resumen de los productos junto con el subtotal y el total a pagar
+# TODO: Hacer doble confirmacion de la cancelacion de la compra
+
+
 
 class ConfirmationScreen(tk.Frame):
-    def __init__(self, master, user_data, total_amount, on_success, on_failure, *args, **kwargs):
+    def __init__(self, master, user_data, total_amount, on_success, on_failure, on_logout, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.user_data = user_data
         self.total_amount = total_amount
         self.on_success = on_success
         self.on_failure = on_failure
+        self.on_logout = on_logout
         self.create_widgets()
 
     def create_widgets(self):
@@ -24,17 +29,9 @@ class ConfirmationScreen(tk.Frame):
     def finalize_purchase(self):
         print("[INFO] Compra finalizada.")
         messagebox.showinfo("Compra finalizada", "Gracias por su compra.")
-        self.master.show_screen(
-            IdentificationScreen,
-            on_success=self.on_success,
-            on_failure=self.on_failure
-        )
+        self.on_logout()
 
     def cancel_purchase(self):
         print("[INFO] Compra cancelada.")
         messagebox.showwarning("Compra cancelada", "Se ha cancelado la operación.")
-        self.master.show_screen(
-            IdentificationScreen,
-            on_success=self.on_success,
-            on_failure=self.on_failure
-        )
+        self.on_logout()

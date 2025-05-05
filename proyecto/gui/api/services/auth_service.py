@@ -12,9 +12,9 @@ class AuthService:
     def authenticate_user(self):
         """Autentica un usuario via RFID."""
         try:
-            card_id = self.reader.read_card()
+            external_id = self.reader.read_card()
             response = requests.get(
-                f"{self.api_base_url}/users/external-id/{card_id}"
+                f"{self.api_base_url}/users/external-id/{external_id}"
             )
             
             if response.status_code == 200:
@@ -23,7 +23,7 @@ class AuthService:
                     username=data.get("username"),
                     surname=data.get("surname"),
                     balance=data.get("balance", 0.0),
-                    card_id=card_id
+                    external_id = external_id
                 )
                 
             return None
