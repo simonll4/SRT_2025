@@ -103,10 +103,15 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
             }
 
             // Buscar producto en BD
-            Product managedProduct = productDAO.findById(item.getProduct().getId())
-                    .orElseThrow(() -> NotFoundException.builder()
-                            .message("No se encuentra el Producto id= " + item.getProduct().getId())
-                            .build());
+            // Product managedProduct = productDAO.findById(item.getProduct().getId())
+            //         .orElseThrow(() -> NotFoundException.builder()
+            //                 .message("No se encuentra el Producto id= " + item.getProduct().getId())
+            //                 .build());
+            
+            Product managedProduct = productDAO.findByProduct(item.getProduct().getProduct())
+                .orElseThrow(() -> NotFoundException.builder()
+                        .message("No se encuentra el Producto= " + item.getProduct().getId())
+                        .build());
 
             // Configurar el item con los objetos gestionados
             item.setProduct(managedProduct);
