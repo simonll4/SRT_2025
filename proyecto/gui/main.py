@@ -22,6 +22,7 @@ class App(tk.Tk):
 
         self.current_screen = None
         self.user_data = None
+        self.order = None
 
         # Inicia directamente con identificación por RFID
         self.show_identification_screen()
@@ -73,6 +74,7 @@ class App(tk.Tk):
         """Inicia el proceso de compra"""
         self.show_screen(
             ProductScanScreen,
+            order=self.order,
             user_data=self.user_data,
             on_success=self.show_confirmation_screen,
             on_cancel=self.show_welcome_screen,
@@ -84,6 +86,7 @@ class App(tk.Tk):
         """Pantalla de confirmación de pago"""
         self.show_screen(
             ConfirmationScreen,
+            order=self.order,
             user_data=self.user_data,
             total_amount=total_amount,
             on_confirm=self.finalize_purchase,

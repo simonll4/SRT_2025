@@ -5,10 +5,12 @@ from gui.screens.screen_confirmation import ConfirmationScreen
 
 # TODO: Sacar el precio de la tabla
 
+
 class ProductScanScreen(tk.Frame):
     def __init__(
         self,
         master,
+        order,
         user_data,
         on_success,
         on_cancel,
@@ -19,6 +21,7 @@ class ProductScanScreen(tk.Frame):
     ):
         super().__init__(master, *args, **kwargs)
         self.master = master
+        self.order = order
         self.user_data = user_data
         print("aca ta el objeto: ", user_data)
         self.on_success = on_success
@@ -96,17 +99,15 @@ class ProductScanScreen(tk.Frame):
             )
             return
 
-        order = self.scan_service.send_order(self.user_data["external_id"])
-        print("Orderrrrrrrrrrrrr: ", order)
+        self.order = self.scan_service.send_order(self.user_data["external_id"])
+        print("ORDER RECIBIDA: ", self.order)
 
-        if order:
-            
-            # total_amount = sum(
-            #     p["unitPrice"] * p["quantity"] for p in self.scan_service.get_products()
-            # )
-            total_amount = order["total"]
+        if self.order:
+
+            total_amount = self.order["total"]
             self.master.show_screen(
                 ConfirmationScreen,
+                order=self.order,
                 user_data=self.user_data,
                 total_amount=total_amount,
                 on_success=self.on_success,

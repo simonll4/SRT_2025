@@ -17,6 +17,8 @@ class ProductScanService:
 
         if uid in self.scanned_products:
             self.scanned_products[uid]["quantity"] += 1
+        elif name == "":
+            pass
         else:
             self.scanned_products[uid] = {"name": name, "quantity": 1}
 
@@ -44,7 +46,7 @@ class ProductScanService:
             )
             print(f"Respuesta de la API: {response.status_code} - {response.text}")
             if response.status_code == 200:
-                return  response.json()
+                return response.json()
         except requests.RequestException as e:
             print(f"Error enviando la orden: {e}")
             return False
