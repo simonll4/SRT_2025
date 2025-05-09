@@ -1,5 +1,5 @@
 import requests
-from gui.api.services.rfid_reader import RFIDReader
+from gui.services.rfid_reader import RFIDReader
 from gui.api.models.users import User
 
 from gui.api.constants import BASE_URL

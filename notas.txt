@@ -1,0 +1,38 @@
+#  RC522
+SDA connects to Pin 24.
+SCK connects to Pin 23.
+MOSI connects to Pin 19.
+MISO connects to Pin 21.
+GND connects to Pin 6.
+RST connects to Pin 22.
+3.3v connects to Pin 1.
+
+
+#  RGB
+Pin LED RGB	        Pin Raspberry Pi	        Nota
+Pata larga (GND)	GND (Pin 6)	                Conexión directa a GND.
+Rojo (R)	        GPIO 17 (Pin 11)	        Con resistencia de 220 Ω.
+Verde (G)	        GPIO 22 (Pin 15)	        Con resistencia de 220 Ω.
+Azul (B)	        GPIO 24 (Pin 18)	        Con resistencia de 220 Ω.
+
+
+# Buzzer
+(+) → GPIO18 (Pin 12) Con resistencia
+(-) → GND (Pin 14)
+
+
+# uso RFID con python
+https://pimylifeup.com/raspberry-pi-rfid-rc522/
+
+
+[ Proceso principal en C ]
+        |
+        ├── Proceso 1: Python GUI (Tkinter)
+        |         ↕
+        |     Memoria compartida
+        |
+        ├── Proceso 2: Python RFID
+        |         ↕
+        |     Memoria compartida
+        |
+        └── Hilo en C: Control de LEDs y buzzer

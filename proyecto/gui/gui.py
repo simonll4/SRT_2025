@@ -1,4 +1,7 @@
 import tkinter as tk
+import signal
+import sys
+
 from gui.screens.screen_identification import IdentificationScreen
 from gui.screens.screen_welcome import WelcomeScreen
 from gui.screens.screen_product_scan import ProductScanScreen
@@ -9,6 +12,7 @@ from gui.api.services.auth_service import AuthService  # Importamos el servicio
 #     command = ["sudo", "./rfid_feedback", "success" if success else "error"]
 #     subprocess.run(command)
 
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -17,7 +21,6 @@ class App(tk.Tk):
         self.resizable(False, False)
 
         # Configuración global del servicio de autenticación
-        # Cambiar IP
         self.auth_service = AuthService()
 
         self.current_screen = None
@@ -108,3 +111,4 @@ class App(tk.Tk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+
