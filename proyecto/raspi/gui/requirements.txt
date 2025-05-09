@@ -2,3 +2,4 @@ RPi.GPIO==0.7.1
 mfrc522==0.0.7
 requests==2.31.0
 spidev==3.6
+posix_ipc==1.1.1

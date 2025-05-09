@@ -6,14 +6,26 @@
 #include <sys/mman.h>
 #include <string.h>
 
+#include <semaphore.h>
+#define SEM_NAME "/rfid_sem"
+
 #define SHM_NAME "/rfid_shm"
 #define SHM_SIZE 128
 
 int main()
 {
+    // Crear semáforo
+    sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
+    if (sem == SEM_FAILED)
+    {
+        perror("sem_open");
+        exit(1);
+    }
+
     // Crear memoria compartida
     int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_fd, SHM_SIZE);
+    // ftruncate(shm_fd, SHM_SIZE);
+    ftruncate(shm_fd, SHM_SIZE * 2);
 
     pid_t pid1 = fork();
     if (pid1 == 0)
@@ -30,10 +42,6 @@ int main()
         setenv("PATH", new_path, 1);
 
         // Ejecutar el script
-        // execl("/home/pipo/raspi/gui/.venv/bin/python",
-        //       "python",
-        //       "/home/pipo/raspi/gui/services/rfid_reader.py",
-        //       NULL);
         execl("/home/pipo/raspi/gui/.venv/bin/python",
               "python", "-m", "gui.services.rfid_reader",
               NULL);
@@ -54,10 +62,6 @@ int main()
                  getenv("PATH"));
         setenv("PATH", new_path, 1);
 
-        // execl("/home/pipo/raspi/gui/.venv/bin/python",
-        //       "python",
-        //       "/home/pipo/raspi/gui/gui.py",
-        //       NULL);
         execl("/home/pipo/raspi/gui/.venv/bin/python",
               "python", "-m", "gui.gui", // ¡Cambiado!
               NULL);
@@ -68,6 +72,9 @@ int main()
     // Esperar hijos
     wait(NULL);
     wait(NULL);
+
+    // Limpiar semáforo
+    sem_unlink(SEM_NAME);
 
     // Limpiar memoria compartida
     shm_unlink(SHM_NAME);

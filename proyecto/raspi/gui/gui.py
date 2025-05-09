@@ -4,11 +4,7 @@ from gui.screens.screen_identification import IdentificationScreen
 from gui.screens.screen_welcome import WelcomeScreen
 from gui.screens.screen_product_scan import ProductScanScreen
 from gui.screens.screen_confirmation import ConfirmationScreen
-from gui.api.services.auth_service import AuthService
-
-# TODO: # def run_feedback(success):
-#     command = ["sudo", "./rfid_feedback", "success" if success else "error"]
-#     subprocess.run(command)
+from gui.view_models.auth_view_model import AuthViewModel
 
 
 class App(tk.Tk):
@@ -19,7 +15,7 @@ class App(tk.Tk):
         self.resizable(False, False)
 
         # Configuración global del servicio de autenticación
-        self.auth_service = AuthService()
+        self.auth_service = AuthViewModel()
 
         self.current_screen = None
         self.user_data = None

@@ -28,3 +28,26 @@ class PurchaseOrderService:
         except requests.RequestException as e:
             print(f"Error al completar la orden de compra: {e}")
             return False
+
+    def send_purchase_order(self, external_id, scanned_products):
+        """Envía la orden a la API."""
+        payload = self.build_order_payload(external_id, scanned_products)
+        print(f"Enviando orden: {payload}")
+        try:
+            response = requests.post(
+                f"{self.api_base_url}/purchase-orders", json=payload
+            )
+            print(f"Respuesta de la API: {response.status_code} - {response.text}")
+            if response.status_code == 200:
+                return response.json()
+        except requests.RequestException as e:
+            print(f"Error enviando la orden: {e}")
+            return False
+
+    def build_order_payload(self, external_id, scanned_products):
+        """Arma el JSON para enviar la orden (sin IDs en los productos)."""
+        items = [
+            {"product": {"product": product["name"]}, "quantity": product["quantity"]}
+            for product in scanned_products
+        ]
+        return {"user": {"externalId": external_id}, "items": items}

@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import font as tkfont
 
+from gui.types.auth_status import AuthStatus
+
 
 class IdentificationScreen(tk.Frame):
     def __init__(self, master, auth_service, on_success, on_failure, **kwargs):
@@ -102,13 +104,17 @@ class IdentificationScreen(tk.Frame):
         """Verificación periódica del lector RFID"""
         if not self._scan_active:
             return
-        try:
-            user = self.auth_service.authenticate_user()
 
-            if user:
-                self._handle_success(user)
-            else:
+        try:
+            status, user = self.auth_service.authenticate_user()
+
+            if status == AuthStatus.NO_CARD:
+                # No hacer nada
+                pass
+            elif status == AuthStatus.UNAUTHORIZED:
                 self._handle_failure()
+            elif status == AuthStatus.AUTHORIZED:
+                self._handle_success(user)
 
         except Exception as e:
             self._handle_error(str(e))
