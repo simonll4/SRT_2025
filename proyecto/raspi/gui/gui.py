@@ -1,12 +1,10 @@
 import tkinter as tk
-import signal
-import sys
 
 from gui.screens.screen_identification import IdentificationScreen
 from gui.screens.screen_welcome import WelcomeScreen
 from gui.screens.screen_product_scan import ProductScanScreen
 from gui.screens.screen_confirmation import ConfirmationScreen
-from gui.api.services.auth_service import AuthService  # Importamos el servicio
+from gui.api.services.auth_service import AuthService
 
 # TODO: # def run_feedback(success):
 #     command = ["sudo", "./rfid_feedback", "success" if success else "error"]
@@ -111,4 +109,3 @@ class App(tk.Tk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-

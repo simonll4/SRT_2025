@@ -1,18 +1,45 @@
 import requests
+import mmap
+import os
+
 from gui.api.constants import BASE_URL
-from gui.services.rfid_reader import RFIDReader
+from gui.constants import SHM_NAME, SHM_SIZE
 
 
 class ProductScanService:
     def __init__(self, api_base_url=BASE_URL):
         self.api_base_url = api_base_url
-        self.reader = RFIDReader()
         self.scanned_products = []
         self.scanned_ids = set()
 
+        # Configurar memoria compartida como solo lectura
+        self.shm_fd = os.open(f"/dev/shm{SHM_NAME}", os.O_RDONLY)
+        self.shm = mmap.mmap(self.shm_fd, SHM_SIZE * 2, access=mmap.ACCESS_READ)
+
+    def read_shared_memory(self):
+        """Lee los datos de la memoria compartida y los devuelve como diccionario."""
+        try:
+            # Leer ID (primeros SHM_SIZE bytes)
+            self.shm.seek(0)
+            id_data = self.shm.read(SHM_SIZE).split(b"\x00")[0]
+            product_id = int(id_data.decode("utf-8")) if id_data else None
+
+            # Leer nombre (siguientes SHM_SIZE bytes)
+            self.shm.seek(SHM_SIZE)
+            name_data = self.shm.read(SHM_SIZE).split(b"\x00")[0]
+            product_name = name_data.decode("utf-8").strip() if name_data else ""
+
+            return {"id": product_id, "name": product_name}
+
+        except Exception as e:
+            print(f"Error leyendo memoria compartida: {e}")
+            return None
+
     def scan_product(self):
         """Escanea un producto y lo agrega solo si no ha sido escaneado antes (mismo ID)."""
-        product_data = self.reader.read_product()
+        product_data = self.read_shared_memory()
+        print(f"Datos leídos de memoria compartida: {product_data}")
+
         uid = product_data["id"]
         name = product_data["name"]
 
@@ -39,6 +66,16 @@ class ProductScanService:
         self.scanned_products.append(new_product)
         self.scanned_ids.add(uid)
         return new_product
+
+    def cleanup(self):
+        """Libera recursos de memoria compartida."""
+        if hasattr(self, "shm"):
+            self.shm.close()
+        if hasattr(self, "shm_fd"):
+            os.close(self.shm_fd)
+
+    def __del__(self):
+        self.cleanup()
 
     def get_products(self):
         """Devuelve la lista actual de productos escaneados."""

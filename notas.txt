@@ -36,3 +36,11 @@ https://pimylifeup.com/raspberry-pi-rfid-rc522/
         |     Memoria compartida
         |
         └── Hilo en C: Control de LEDs y buzzer
+
+
+
+
+
+- python3 -m venv .venv
+- source .venv/bin/activate
+- pip install -r requirements.txt

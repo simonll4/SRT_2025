@@ -1,7 +1,7 @@
 # rfid_reader.py
 import mmap
 import time
-import os 
+import os
 
 SHM_NAME = "/rfid_shm"
 SHM_SIZE = 128
