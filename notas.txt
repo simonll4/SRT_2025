@@ -44,3 +44,13 @@ https://pimylifeup.com/raspberry-pi-rfid-rc522/
 - python3 -m venv .venv
 - source .venv/bin/activate
 - pip install -r requirements.txt
+
+///////////////////////////////
+-  docker buildx build --platform linux/amd64 -f Dockerfile -t simonll4/srt-backend:latest
+- mvn clean package -DskipTests
+
+- sudo ufw status verbose
+- sudo ufw allow 80/tcp
+- sudo ufw reload
+
+http://192.168.1.4/api/v1/users/external-id/{id}
