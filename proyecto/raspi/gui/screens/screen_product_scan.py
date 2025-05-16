@@ -5,6 +5,7 @@ import time
 
 from gui.view_models.product_view_model import ProductViewModel
 from gui.screens.screen_confirmation import ConfirmationScreen
+from gui.screens.screen_purchase_result import PurchaseResultScreen
 
 
 class ProductScanScreen(tk.Frame):
@@ -137,13 +138,34 @@ class ProductScanScreen(tk.Frame):
             self.start_scan_thread()  # Reanudar escaneo
 
     def cancel_purchase(self):
-        """Cancela la compra y detiene el escaneo"""
+        # Primera confirmación
         confirm = messagebox.askyesno(
-            "Cancelar compra", "¿Seguro que desea cancelar la compra?"
+            "Confirmar cancelación", "¿Estás seguro de cancelar la compra?"
         )
-        if confirm:
-            self.stop_scan_thread()
-            self.on_logout()
+        if not confirm:
+            return
+
+        print("[INFO] Compra cancelada.")
+
+        # Marcar la orden como cancelada en el backend si existe
+        if self.order and "id" in self.order:
+            try:
+                success = self.product_viewmodel.cancel_order(self.order["id"])
+                if success:
+                    print("Orden cancelada exitosamente en el servidor")
+                else:
+                    print("Error al cancelar la orden en el servidor")
+            except Exception as e:
+                print(f"Error al cancelar orden: {e}")
+
+        # Mostrar pantalla de resultado de cancelación
+        self.master.show_screen(
+            PurchaseResultScreen,
+            success=False,  # Usamos False para indicar cancelación
+            message="La compra ha sido cancelada exitosamente",
+            user_data=self.user_data,
+            on_return=self.on_logout,  # Después del timeout, hace logout
+        )
 
     def destroy(self):
         """Limpieza al cerrar la pantalla"""

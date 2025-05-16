@@ -159,3 +159,17 @@ class ProductViewModel:
             bool: True si la operación fue exitosa, False en caso contrario
         """
         return self.order_service.update_order_items(order_id, items_to_update)
+
+    # En gui/view_models/product_view_model.py
+    def cancel_order(self, order_id, description="ORDEN DE COMPRA CANCELADA"):
+        """
+        Cancela una orden mediante el servicio de órdenes
+
+        Args:
+            order_id (str): ID de la orden a cancelar
+            description (str): Descripción opcional para la cancelación
+
+        Returns:
+            bool: True si la operación fue exitosa, False en caso contrario
+        """
+        return self.order_service.cancel_order(order_id, description)

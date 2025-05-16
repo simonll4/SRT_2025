@@ -5,7 +5,7 @@ from gui.screens.screen_welcome import WelcomeScreen
 from gui.screens.screen_product_scan import ProductScanScreen
 from gui.screens.screen_confirmation import ConfirmationScreen
 from gui.view_models.auth_view_model import AuthViewModel
-
+from gui.screens.screen_purchase_result import PurchaseResultScreen
 
 class App(tk.Tk):
     def __init__(self):
@@ -90,11 +90,11 @@ class App(tk.Tk):
             on_cancel=self.show_welcome_screen,
         )
 
-    def finalize_purchase(self):
-        """Lógica final de compra"""
-        print(f"[PURCHASE] Compra finalizada por {self.user_data['nombre']}")
-        # Aquí iría la lógica para registrar la transacción en el backend
-        self.show_welcome_screen()
+    # def finalize_purchase(self):
+    #     """Lógica final de compra"""
+    #     print(f"[PURCHASE] Compra finalizada por {self.user_data['nombre']}")
+    #     # Aquí iría la lógica para registrar la transacción en el backend
+    #     self.show_welcome_screen()
 
     def logout_user(self):
         """Cierra sesión y vuelve a identificación"""

@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 from gui.view_models.product_view_model import ProductViewModel
+from gui.screens.screen_purchase_result import PurchaseResultScreen
 
 
 class ConfirmationScreen(tk.Frame):
@@ -121,17 +122,6 @@ class ConfirmationScreen(tk.Frame):
                 self.remove_product(int(row_id))
                 self.refresh_screen()
 
-    # def remove_product(self, index):
-    #     """Elimina o decrementa el producto según su cantidad."""
-    #     if index >= len(self.last_products):
-    #         return
-
-    #     product = self.last_products[index]
-    #     if product["quantity"] > 1:
-    #         product["quantity"] -= 1
-    #     else:
-    #         self.last_products.pop(index)
-
     def remove_product(self, index):
         """Elimina o decrementa el producto según su cantidad."""
         if index >= len(self.last_products):
@@ -214,6 +204,11 @@ class ConfirmationScreen(tk.Frame):
 
     def refresh_screen(self):
         """Vuelve a renderizar los widgets para reflejar los cambios."""
+        new_total = sum(p["quantity"] * 100 for p in self.last_products)
+        # Si no hay productos o el total es cero, finalizar automáticamente
+        if not self.last_products or new_total <= 0:
+            self.handle_zero_total()
+            return
         self.create_widgets()
 
     def retry_purchase(self):
@@ -232,9 +227,31 @@ class ConfirmationScreen(tk.Frame):
             print("Fallo al reenviar la orden.")
             messagebox.showerror("Error", "No se pudo reintentar la compra.")
 
+    def handle_zero_total(self):
+        """Maneja el caso cuando no hay productos o el total es cero"""
+        if self.order and "id" in self.order:
+            # Si ya existe una orden, la marcamos como completada (o cancelada según tu lógica)
+            success = self.product_viewmodel.order_service.complete_purchase_order(
+                self.order["id"]
+            )
+        else:
+            success = True  # Si no hay orden creada, consideramos éxito
+
+        # Mostrar pantalla de resultado
+        self.master.show_screen(
+            PurchaseResultScreen,
+            success=success,
+            message=(
+                "No hay productos para comprar"
+                if not self.last_products
+                else "El total de la compra es cero"
+            ),
+            user_data=self.user_data,
+            on_return=self.on_logout,
+        )
+
     def finalize_purchase(self):
         print("[INFO] Compra finalizada.")
-        messagebox.showinfo("Compra finalizada", "Gracias por su compra.")
 
         success = self.product_viewmodel.order_service.complete_purchase_order(
             self.order["id"]
@@ -242,16 +259,51 @@ class ConfirmationScreen(tk.Frame):
 
         if success:
             print("Orden completada exitosamente")
+            # Mostrar pantalla de éxito
+            self.master.show_screen(
+                PurchaseResultScreen,
+                success=True,
+                message="Tu compra se ha completado con éxito",
+                user_data=self.user_data,
+                on_return=self.on_logout,
+            )
         else:
             print("Error al completar la orden")
-        self.on_logout()
+            # Mostrar pantalla de error
+            self.master.show_screen(
+                PurchaseResultScreen,
+                success=False,
+                message="Hubo un problema al procesar tu compra",
+                user_data=self.user_data,
+                on_return=self.on_logout,
+            )
 
     def cancel_purchase(self):
+        # Primera confirmación
         confirm = messagebox.askyesno(
             "Confirmar cancelación", "¿Estás seguro de cancelar la compra?"
         )
         if not confirm:
             return
+
         print("[INFO] Compra cancelada.")
-        messagebox.showwarning("Compra cancelada", "Se ha cancelado la operación.")
-        self.on_logout()
+
+        # Marcar la orden como cancelada en el backend si existe
+        if self.order and "id" in self.order:
+            try:
+                success = self.product_viewmodel.cancel_order(self.order["id"])
+                if success:
+                    print("Orden cancelada exitosamente en el servidor")
+                else:
+                    print("Error al cancelar la orden en el servidor")
+            except Exception as e:
+                print(f"Error al cancelar orden: {e}")
+
+        # Mostrar pantalla de resultado de cancelación
+        self.master.show_screen(
+            PurchaseResultScreen,
+            success=False,  # Usamos False para indicar cancelación
+            message="La compra ha sido cancelada exitosamente",
+            user_data=self.user_data,
+            on_return=self.on_logout,  # Después del timeout, hace logout
+        )
