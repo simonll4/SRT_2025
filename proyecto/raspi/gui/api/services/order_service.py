@@ -51,3 +51,42 @@ class PurchaseOrderService:
             for product in scanned_products
         ]
         return {"user": {"externalId": external_id}, "items": items}
+
+    def update_order_items(self, order_id, items):
+        """
+        Actualiza los items de una orden mediante PATCH
+        
+        Args:
+            order_id (int): ID de la orden principal (no de los items)
+            items (list): Lista de items con:
+                - id: ID del item de orden
+                - product_id: ID del producto
+                - quantity: Nueva cantidad
+                
+        Returns:
+            bool: True si la operación fue exitosa, False en caso contrario
+        """
+        try:
+            payload = [
+                {
+                    "id": item["item_id"],  # ID del item específico
+                    "order": {"id": order_id},  # ID de la orden principal
+                    "product": {"id": item["product_id"]},
+                    "quantity": item["quantity"]
+                }
+                for item in items
+            ]
+            
+            response = requests.patch(
+                f"{self.api_base_url}/purchase-orders/items",
+                json=payload,
+                timeout=5
+            )
+            
+            print(f"Actualizando items: {payload}")
+            print(f"Respuesta de la API: {response.status_code} - {response.text}")
+            
+            return response.ok
+        except requests.RequestException as e:
+            print(f"Error al actualizar items: {e}")
+            return False

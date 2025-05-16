@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from gui.api.services.order_service import PurchaseOrderService
 from gui.view_models.product_view_model import ProductViewModel
 
 
@@ -71,19 +70,18 @@ class ConfirmationScreen(tk.Frame):
 
             self.tree.bind("<Button-1>", self.handle_tree_click)
 
-            total = sum(p["quantity"] * 100 for p in self.last_products)
-            self.total_amount = total
-            tk.Label(
-                self,
-                text=f"Total a pagar: ${self.total_amount:.2f}",
-                font=("Arial", 16),
-            ).pack(pady=10)
-
+        total = sum(p["quantity"] * 100 for p in self.last_products)
+        self.total_amount = total
+        tk.Label(
+            self,
+            text=f"Total a pagar: ${self.total_amount:.2f}",
+            font=("Arial", 16),
+        ).pack(pady=10)
 
         # Crear botones inferiores
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=30)
-        
+
         if self.order["status"] == "FAILED":
             tk.Label(
                 self,
@@ -123,16 +121,96 @@ class ConfirmationScreen(tk.Frame):
                 self.remove_product(int(row_id))
                 self.refresh_screen()
 
+    # def remove_product(self, index):
+    #     """Elimina o decrementa el producto según su cantidad."""
+    #     if index >= len(self.last_products):
+    #         return
+
+    #     product = self.last_products[index]
+    #     if product["quantity"] > 1:
+    #         product["quantity"] -= 1
+    #     else:
+    #         self.last_products.pop(index)
+
     def remove_product(self, index):
         """Elimina o decrementa el producto según su cantidad."""
         if index >= len(self.last_products):
             return
 
         product = self.last_products[index]
-        if product["quantity"] > 1:
-            product["quantity"] -= 1
+
+        # Para órdenes fallidas, solo actualizamos localmente
+        if self.order["status"] == "FAILED":
+            if product["quantity"] > 1:
+                product["quantity"] -= 1
+            else:
+                self.last_products.pop(index)
+            return
+
+        # Para órdenes no fallidas, actualizamos en la API
+        try:
+            original_item = self._find_matching_order_item(product["name"])
+            if not original_item:
+                print(f"No se encontró el item original para {product['name']}")
+                return
+
+            if "productId" not in original_item:
+                print(
+                    f"Estructura de producto inválida en el item original: {original_item}"
+                )
+                return
+
+            update_data = self._prepare_update_data(product, original_item)
+            if not update_data:
+                return
+
+            if self._process_product_update(product, update_data):
+                self.refresh_screen()
+
+        except Exception as e:
+            print(f"Error al eliminar producto: {e}")
+            messagebox.showerror(
+                "Error", "No se pudo actualizar la orden en el servidor"
+            )
+
+    def _find_matching_order_item(self, product_name):
+        """Encuentra el item de la orden que coincide con el producto."""
+        return next(
+            (
+                item
+                for item in self.order["items"]
+                if item["productName"].lower() == product_name.lower()
+            ),
+            None,
+        )
+
+    def _prepare_update_data(self, product, original_item):
+        """Prepara los datos para actualizar el producto."""
+        new_quantity = product["quantity"] - 1
+        if new_quantity < 0:
+            return None
+
+        return {
+            "item_id": original_item["id"],  # ID del item específico
+            "product_id": original_item["productId"],
+            "quantity": new_quantity,
+        }
+
+    def _process_product_update(self, product, update_data):
+        """Procesa la actualización del producto y actualiza la lista local."""
+        success = self.product_viewmodel.update_order_items(
+            self.order["id"], [update_data]
+        )
+
+        if not success:
+            return False
+
+        if update_data["quantity"] == 0:
+            self.last_products.remove(product)
         else:
-            self.last_products.pop(index)
+            product["quantity"] = update_data["quantity"]
+
+        return True
 
     def refresh_screen(self):
         """Vuelve a renderizar los widgets para reflejar los cambios."""
@@ -161,6 +239,7 @@ class ConfirmationScreen(tk.Frame):
         success = self.product_viewmodel.order_service.complete_purchase_order(
             self.order["id"]
         )
+
         if success:
             print("Orden completada exitosamente")
         else:
@@ -176,103 +255,3 @@ class ConfirmationScreen(tk.Frame):
         print("[INFO] Compra cancelada.")
         messagebox.showwarning("Compra cancelada", "Se ha cancelado la operación.")
         self.on_logout()
-
-
-# import tkinter as tk
-# from tkinter import messagebox, ttk
-# from gui.api.services.order_service import PurchaseOrderService
-# from gui.view_models.product_view_model import ProductViewModel
-
-# # TODO: Mostrar el resumen de los productos junto con el subtotal y el total a pagar
-# # TODO: Hacer doble confirmacion de la cancelacion de la compra
-
-
-# class ConfirmationScreen(tk.Frame):
-#     def __init__(
-#         self,
-#         master,
-#         order,
-#         user_data,
-#         total_amount,
-#         on_success,
-#         on_failure,
-#         on_logout,
-#         *args,
-#         **kwargs,
-#     ):
-#         super().__init__(master, *args, **kwargs)
-#         self.order = order
-#         self.user_data = user_data
-#         self.total_amount = total_amount
-#         self.on_success = on_success
-#         self.on_failure = on_failure
-#         self.on_logout = on_logout
-#         self.order_service = PurchaseOrderService()
-
-#         self.product_viewmodel = ProductViewModel()
-#         self.last_products = self.product_viewmodel.get_products()
-
-#         self.create_widgets()
-
-#     def create_widgets(self):
-#         tk.Label(self, text="Resumen de la compra", font=("Arial", 18)).pack(pady=20)
-
-#         # Tabla tipo Treeview
-#         columns = ("product", "quantity", "subtotal")
-#         tree = ttk.Treeview(self, columns=columns, show="headings", height=6)
-#         tree.heading("product", text="Producto")
-#         tree.heading("quantity", text="Cantidad")
-#         tree.heading("subtotal", text="Subtotal ($)")
-#         tree.column("product", width=150)
-#         tree.column("quantity", width=80, anchor=tk.CENTER)
-#         tree.column("subtotal", width=100, anchor=tk.CENTER)
-
-#         for item in self.order["items"]:
-#             tree.insert("", tk.END, values=(item["productName"], item["quantity"], f"{item['subtotal']:.2f}"))
-
-#         tree.pack(pady=10)
-
-#         # Total
-#         tk.Label(
-#             self, text=f"Total a pagar: ${self.total_amount:.2f}", font=("Arial", 16)
-#         ).pack(pady=10)
-
-#         # Mensaje de saldo insuficiente
-#         if self.order["status"] == "FAILED":
-#             tk.Label(
-#                 self, text="Saldo insuficiente. Elimina productos para continuar.",
-#                 font=("Arial", 12), fg="red"
-#             ).pack(pady=5)
-
-#         # Botones
-#         btn_frame = tk.Frame(self)
-#         btn_frame.pack(pady=30)
-
-#         self.finalize_btn = tk.Button(
-#             btn_frame, text="Finalizar compra", width=20, command=self.finalize_purchase
-#         )
-#         self.finalize_btn.grid(row=0, column=0, padx=10)
-
-#         # Habilita o deshabilita el botón según el estado
-#         if self.order["status"] == "FAILED":
-#             self.finalize_btn.config(state=tk.DISABLED)
-
-#         tk.Button(
-#             btn_frame, text="Cancelar", width=20, command=self.cancel_purchase
-#         ).grid(row=0, column=1, padx=10)
-
-#     def finalize_purchase(self):
-#         print("[INFO] Compra finalizada.")
-#         messagebox.showinfo("Compra finalizada", "Gracias por su compra.")
-
-#         success = self.order_service.complete_purchase_order(self.order["id"])
-#         if success:
-#             print("Orden completada exitosamente")
-#         else:
-#             print("Error al completar la orden")
-#         self.on_logout()
-
-#     def cancel_purchase(self):
-#         print("[INFO] Compra cancelada.")
-#         messagebox.showwarning("Compra cancelada", "Se ha cancelado la operación.")
-#         self.on_logout()

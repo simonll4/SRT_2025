@@ -143,3 +143,19 @@ class ProductViewModel:
         if not products:
             products = self.scanned_products
         return self.order_service.send_purchase_order(external_id, products)
+
+    def update_order_items(self, order_id, items_to_update):
+        """
+        Actualiza los items de una orden mediante el servicio de ordenes
+
+        Args:
+            order_id (int): ID de la orden
+            items_to_update (list): Lista de diccionarios con:
+                - id: ID del item de la orden
+                - product_id: ID del producto
+                - quantity: Nueva cantidad
+
+        Returns:
+            bool: True si la operación fue exitosa, False en caso contrario
+        """
+        return self.order_service.update_order_items(order_id, items_to_update)

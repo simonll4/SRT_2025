@@ -41,15 +41,13 @@ class ProductScanScreen(tk.Frame):
         tk.Label(self, text="Escaneo de Productos", font=("Arial", 18)).pack(pady=10)
 
         # Tabla de productos
-        columns = ("name", "quantity", "price")
+        columns = ("name", "quantity")
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=10)
         self.tree.heading("name", text="Nombre del producto")
         self.tree.heading("quantity", text="Cantidad")
-        self.tree.heading("price", text="Precio")
 
         self.tree.column("name", width=200)
         self.tree.column("quantity", width=100)
-        self.tree.column("price", width=100)
 
         self.tree.pack(pady=10)
 
@@ -62,7 +60,7 @@ class ProductScanScreen(tk.Frame):
         final_frame.pack(pady=20)
 
         tk.Button(
-            final_frame, text="Finalizar compra", command=self.finalize_purchase
+            final_frame, text="Aceptar compra", command=self.finalize_purchase
         ).grid(row=0, column=0, padx=10)
         tk.Button(
             final_frame, text="Cancelar compra", command=self.cancel_purchase

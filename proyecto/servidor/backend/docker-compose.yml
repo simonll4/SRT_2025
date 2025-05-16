@@ -10,4 +10,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./mysql:/var/lib/mysql
+      - mysql-data-iw3:/var/lib/mysql
+
+volumes:
+  mysql-data-iw3:

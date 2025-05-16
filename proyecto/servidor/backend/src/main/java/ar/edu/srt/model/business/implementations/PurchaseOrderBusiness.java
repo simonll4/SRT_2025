@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static java.sql.DriverManager.println;
+
 
 @Service
 @Slf4j
@@ -214,7 +216,10 @@ public class PurchaseOrderBusiness implements IPurchaseOrderBusiness {
             throws NotFoundException, BusinessException {
 
         // 1. Cargar la orden completa
-        Long orderId = itemsToUpdate.get(0).getId();
+        Long orderId = itemsToUpdate.get(0).getOrder().getId();
+
+        println("ID de la orden a actualizar: " + orderId);
+
         PurchaseOrder order = load(orderId);
 
         // 2. Validar que esté en estado PENDING

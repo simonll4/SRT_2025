@@ -1,5 +1,5 @@
 #  RC522
-SDA connects to Pin 24.
+SDA connects to Pin 24. 
 SCK connects to Pin 23.
 MOSI connects to Pin 19.
 MISO connects to Pin 21.
@@ -46,8 +46,9 @@ https://pimylifeup.com/raspberry-pi-rfid-rc522/
 - pip install -r requirements.txt
 
 ///////////////////////////////
--  docker buildx build --platform linux/amd64 -f Dockerfile -t simonll4/srt-backend:latest
 - mvn clean package -DskipTests
+-  docker buildx build --platform linux/amd64 -f Dockerfile -t simonll4/srt-backend:latest .
+
 
 - sudo ufw status verbose
 - sudo ufw allow 80/tcp

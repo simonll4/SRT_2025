@@ -53,7 +53,7 @@ int main()
     if (pid2 == 0)
     {
         // Mismo setup para el segundo script
-        setenv("VIRTUAL_ENV", "/home/pipo/raspi/gui/.venv", 1);
+        setenv("VIRTUAL_ENV", "/home/pipo/raspi/gui/.venv", 1); 
         setenv("PYTHONPATH", "/home/pipo/raspi", 1);
 
         char new_path[1024];
