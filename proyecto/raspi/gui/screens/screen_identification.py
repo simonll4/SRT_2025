@@ -128,8 +128,8 @@ class IdentificationScreen(tk.Frame):
         # 1. Actualizar UI
         self.status_label.config(text="¡Tarjeta reconocida!", fg="#28a745")
         self.instruction_label.config(fg="#28a745")
-        
-        #TODO abrir socket para prender luz verde y ruido de ok
+
+        # TODO abrir socket para prender luz verde y ruido de ok
 
         # 2. Detener spinner y mostrar checkmark
         self.after_cancel(self._spinner_id)
@@ -152,9 +152,9 @@ class IdentificationScreen(tk.Frame):
 
     def _handle_failure(self):
         """Maneja cuando no se reconoce una tarjeta"""
-        
-        #TODO abrir socket para prender luz roja y ruido de error
-        
+
+        # TODO abrir socket para prender luz roja y ruido de error
+
         # 1. Cancelar cualquier temporizador previo
         if hasattr(self, "_restore_timer"):
             self.after_cancel(self._restore_timer)
@@ -210,3 +210,15 @@ class IdentificationScreen(tk.Frame):
         if hasattr(self, "_spinner_id"):
             self.after_cancel(self._spinner_id)
         super().destroy()
+
+    # TODO para interactuar con el feedback de GPIO
+    # import socket
+    # def send_gpio_feedback(command: str):
+    #     try:
+    #         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+    #             client.connect("/tmp/gpio_feedback.sock")
+    #             client.sendall(command.encode("utf-8"))
+    #     except Exception as e:
+    #         print(f"[GPIO_FEEDBACK] Error al enviar comando: {e}")
+    # send_gpio_feedback("SUCCESS")
+    # send_gpio_feedback("FAILURE")
