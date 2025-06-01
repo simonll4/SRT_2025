@@ -71,7 +71,7 @@ class ProductViewModel:
             print(f"Error al limpiar memoria compartida: {e}")
 
     def scan_product(self):
-        """Escanea un producto y lo agrega solo si no ha sido escaneado antes."""
+        """Escanea un producto y lo agrega o incrementa su cantidad si ya existe."""
         try:
             product_data = self.read_shared_memory()
             print(f"Datos leídos de memoria compartida: {product_data}")
@@ -87,7 +87,7 @@ class ProductViewModel:
                 self.clear_shared_memory()
                 return ProductScanStatus.NO_PRODUCT, None
 
-                # Limpieza del nombre
+            # Limpieza del nombre
             name = (
                 name_raw.encode("utf-8", "ignore")
                 .decode("utf-8", "ignore")
@@ -100,25 +100,23 @@ class ProductViewModel:
                 self.clear_shared_memory()
                 return ProductScanStatus.INVALID_NAME, None
 
-            if uid in self.scanned_ids:
-                self.clear_shared_memory()
-                return ProductScanStatus.DUPLICATE, None
-
-            # new_product = {"id": uid, "name": name, "quantity": 1}
-            new_product = {"name": name, "quantity": 1}
+            # Buscar si el producto ya existe
             existing = next(
                 (p for p in self.scanned_products if p["name"] == name), None
             )
+            
             if existing:
+                # Si existe, incrementar la cantidad
                 existing["quantity"] += 1
+                self.clear_shared_memory()
+                return ProductScanStatus.SUCCESS, existing
             else:
+                # Si no existe, agregar nuevo producto
+                new_product = {"name": name, "quantity": 1}
                 self.scanned_products.append(new_product)
-
-            # self.scanned_products.append(new_product)
-            self.scanned_ids.add(uid)
-
-            self.clear_shared_memory()
-            return ProductScanStatus.SUCCESS, new_product
+                self.scanned_ids.add(uid)
+                self.clear_shared_memory()
+                return ProductScanStatus.SUCCESS, new_product
 
         except Exception as e:
             print(f"Error escaneando producto: {e}")
