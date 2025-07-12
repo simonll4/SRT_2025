@@ -4,10 +4,25 @@ import threading
 import time
 import math
 import random
+import socket
 
 from gui.view_models.product_view_model import ProductViewModel
 from gui.screens.screen_confirmation import ConfirmationScreen
 from gui.screens.screen_purchase_result import PurchaseResultScreen
+from gui.types.product_status import ProductScanStatus
+
+# Ruta del socket para feedback de LEDs
+SOCKET_PATH = "/tmp/gpio_feedback.sock"
+
+
+def send_gpio_feedback(message: str):
+    """Envía un mensaje (SUCCESS o FAILURE) al proceso de feedback GPIO"""
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.connect(SOCKET_PATH)
+            client.sendall(message.encode("utf-8"))
+    except Exception as e:
+        print(f"[GPIO_FEEDBACK] Error al enviar mensaje: {e}")
 
 
 class ProductScanScreen(tk.Frame):
@@ -690,10 +705,16 @@ class ProductScanScreen(tk.Frame):
             try:
                 with self.scan_lock:
                     status, product = self.product_viewmodel.scan_product()
-                    if product:
+                    # Enviar feedback al proceso GPIO según resultado
+                    if status == ProductScanStatus.SUCCESS and product:
+                        send_gpio_feedback("SUCCESS")
                         self.scan_count += 1
                         self.after(0, self.update_table)
                         self.after(0, self.product_scanned)
+                    elif status in (ProductScanStatus.ERROR, ProductScanStatus.INVALID_NAME, ProductScanStatus.DUPLICATE):
+                        send_gpio_feedback("FAILURE")
+                        if status == ProductScanStatus.DUPLICATE:
+                            self.after(0, lambda: messagebox.showwarning("Producto duplicado", "El producto ya fue escaneado anteriormente."))
             except Exception as e:
                 self.after(
                     0, lambda: messagebox.showerror("Error", f"Error al escanear: {e}")

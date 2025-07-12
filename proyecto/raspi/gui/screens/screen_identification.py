@@ -3,8 +3,22 @@ from tkinter import font as tkfont
 import math
 import time
 import random
+import socket
 
 from gui.types.auth_status import AuthStatus
+
+# Ruta del socket para feedback de LEDs
+SOCKET_PATH = "/tmp/gpio_feedback.sock"
+
+
+def send_gpio_feedback(message: str):
+    """Envía un mensaje (SUCCESS o FAILURE) al proceso de feedback GPIO"""
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.connect(SOCKET_PATH)
+            client.sendall(message.encode("utf-8"))
+    except Exception as e:
+        print(f"[GPIO_FEEDBACK] Error al enviar mensaje: {e}")
 
 
 class IdentificationScreen(tk.Frame):
@@ -595,6 +609,8 @@ class IdentificationScreen(tk.Frame):
     def _handle_success(self, user):
         """Tarjeta detectada correctamente con animación espectacular"""
         try:
+            # Notificar éxito al proceso GPIO
+            send_gpio_feedback("SUCCESS")
             # Actualizar UI con efectos de éxito
             self.status_label.config(text="✅ ¡Tarjeta reconocida!", fg="#27ae60")
             self.instruction_label.config(text="Acceso concedido - Bienvenido", fg="#27ae60")
@@ -640,6 +656,8 @@ class IdentificationScreen(tk.Frame):
     def _handle_failure(self):
         """Maneja cuando no se reconoce una tarjeta con efectos visuales impactantes"""
         try:
+            # Notificar fallo al proceso GPIO
+            send_gpio_feedback("FAILURE")
             # Cancelar cualquier temporizador previo
             if hasattr(self, "_restore_timer"):
                 self.after_cancel(self._restore_timer)

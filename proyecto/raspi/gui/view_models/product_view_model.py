@@ -106,10 +106,9 @@ class ProductViewModel:
             )
             
             if existing:
-                # Si existe, incrementar la cantidad
-                existing["quantity"] += 1
+                # Producto ya escaneado anteriormente. No sumar cantidad.
                 self.clear_shared_memory()
-                return ProductScanStatus.SUCCESS, existing
+                return ProductScanStatus.DUPLICATE, existing
             else:
                 # Si no existe, agregar nuevo producto
                 new_product = {"name": name, "quantity": 1}

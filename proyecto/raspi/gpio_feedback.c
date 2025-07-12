@@ -7,9 +7,8 @@
 #include <pigpio.h>
 
 #define SOCKET_PATH "/tmp/gpio_feedback.sock"
-#define LED_GREEN 17
-#define LED_RED 27
-#define BUZZER 22
+#define LED_GREEN 6
+#define LED_RED 5
 
 // TODO: revisar antes de probar
 
@@ -23,7 +22,6 @@ void run_gpio_feedback()
 
     gpioSetMode(LED_GREEN, PI_OUTPUT);
     gpioSetMode(LED_RED, PI_OUTPUT);
-    gpioSetMode(BUZZER, PI_OUTPUT);
 
     int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (server_fd < 0)
@@ -67,18 +65,14 @@ void run_gpio_feedback()
         {
             gpioWrite(LED_RED, 0);
             gpioWrite(LED_GREEN, 1);
-            gpioWrite(BUZZER, 1);
             usleep(200000);
-            gpioWrite(BUZZER, 0);
             gpioWrite(LED_GREEN, 0);
         }
         else if (strcmp(buffer, "FAILURE") == 0)
         {
             gpioWrite(LED_GREEN, 0);
             gpioWrite(LED_RED, 1);
-            gpioWrite(BUZZER, 1);
             usleep(500000);
-            gpioWrite(BUZZER, 0);
             gpioWrite(LED_RED, 0);
         }
     }

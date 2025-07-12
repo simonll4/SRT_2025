@@ -21,7 +21,7 @@ class PurchaseOrderService:
             response = requests.post(
                 f"{self.api_base_url}/purchase-orders/complete", json={"id": order_id}
             )
-            print(f"Respuesta de la API: {response.status_code} - {response.text}")
+            print(f"Respuesta de la API: {response.status_code} - {response}")
             # Consideramos éxito cualquier código 2xx
             return response.ok
 
@@ -49,6 +49,7 @@ class PurchaseOrderService:
         items = [
             {"product": {"product": product["name"]}, "quantity": product["quantity"]}
             for product in scanned_products
+            if product.get("name") and str(product.get("name")).strip()
         ]
         return {"user": {"externalId": external_id}, "items": items}
 
