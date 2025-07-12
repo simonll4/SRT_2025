@@ -4,6 +4,7 @@ import math
 import time
 from gui.view_models.product_view_model import ProductViewModel
 from gui.screens.screen_purchase_result import PurchaseResultScreen
+from gui.services.receipt_printer import ReceiptPrinter
 
 
 class ConfirmationScreen(tk.Frame):
@@ -670,6 +671,10 @@ class ConfirmationScreen(tk.Frame):
                 user_data=self.user_data,
                 on_return=self.on_logout,
             )
+            try:
+                ReceiptPrinter(printer_name="Samsung_ML-2950_Series").print_receipt(self.order["id"])
+            except Exception as e:
+                print(f"Error imprimiendo comprobante: {e}")
         else:
             print("Error al completar la orden")
             # Mostrar pantalla de error
